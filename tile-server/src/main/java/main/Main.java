@@ -15,6 +15,9 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.scidb.jdbc.Connection;
+//import org.scidb.jdbc.IResultSetWrapper;
+
 public class Main {
 
     private static Project project = null;
@@ -26,6 +29,9 @@ public class Main {
             ScriptException,
             NoSuchMethodException, InterruptedException {
 
+	// connect to scidb
+	connectScidb();
+/*
         // read config file
         readConfigFile();
 
@@ -47,7 +53,7 @@ public class Main {
 
         // start server
         Server.startServer(Config.portNumber);
-    }
+  */  }
 
     public static Project getProject() {
         return project;
@@ -104,5 +110,30 @@ public class Main {
             System.out.println("Cannot find definition of main project... waiting...");
         }
         DbConnector.commitConnection(Config.databaseName);
+    }
+    private static void connectScidb() throws IOException {
+	try {
+            Class.forName("org.scidb.jdbc.Driver");
+        }
+	catch (ClassNotFoundException e)
+        {
+            System.out.println("Driver is not in the CLASSPATH -> " + e);
+        }
+	String url = "jdbc:scidb://127.0.0.1:1239/";
+	try{
+//	Connection dbConn = DriverManager.getConnection(url);
+	Connection dbConn = new Connection("127.0.0.1",1239);
+	Statement st = dbConn.createStatement();
+	dbConn.getSciDBConnection().setAfl(false);
+	ResultSet res = st.executeQuery("select * from test");
+//	ResultSet res = st.executeQuery("select * from array(<a:string>[x=0:2,3,0, y=0:2,3,0], '[[\"a\",\"b\",\"c\"][\"d\",\"e\",\"f\"][\"123\",\"456\",\"789\"]]')");
+        ResultSetMetaData meta = res.getMetaData();
+    	System.out.println("Source array name: " + meta.getTableName(0));
+        System.out.println(meta.getColumnCount() + " columns:");
+	}
+	catch (SQLException e)
+        {
+            System.out.println("scidb error:" + e);
+        }
     }
 }
